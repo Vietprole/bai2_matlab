@@ -1,5 +1,5 @@
-pathHuanLuyen = "./NguyenAmKiemThu-16k/";
-dir_contentHL = dir("./NguyenAmKiemThu-16k/");
+pathHuanLuyen = "./NguyenAmHuanLuyen-16k/";
+dir_contentHL = dir("./NguyenAmHuanLuyen-16k/");
 
 N_FFT = 512;
 
