@@ -67,7 +67,7 @@ for N_FFTi = 1:3
     columnNames1 = ["a","e","i","o","u"];
     rowNames1 =  ["a","e","i","o","u"];
     title = "N_FFT = " + num2str(N_FFT)+ ", Bang nham lan"+ ", Do chinh xac: " + num2str(doChinhXac);
-    fig1 = figure('Name',title,'Position',[200 200 420 200], 'NumberTitle', 'off');
+    fig1 = figure('Name',title,'Position',[200 200 450 200], 'NumberTitle', 'off');
     header = ["a","e","i","o","u"];
     T1 = array2table(result);
 
@@ -75,36 +75,36 @@ for N_FFTi = 1:3
         'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
 
 
-    % % dua ra table
+    % dua ra table
     columnNames = ["a","e","i","o","u"];
-    % foldername = {dir_contentKT.name};
-    % rowNames = foldername(3:length(foldername));
-    % arraytable2 = char(arraytable);
-    % 
-    % T = array2table(arraytable2);
-    % celltable = table2cell(T);
-    % 
-    % 
+    foldername = {dir_contentKT.name};
+    rowNames = foldername(3:length(foldername));
+    arraytable2 = char(arraytable);
+
+    T = array2table(arraytable2);
+    celltable = table2cell(T);
+
+
     title = "N_FFT = " + num2str(N_FFT) + " Do chinh xac: " + num2str(doChinhXac);
-    % fig = figure('Name',title,'Position',[300 100 440 420], 'NumberTitle', 'off');
-    % 
-    % t = uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
-    %     'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
+    fig = figure('Name',title,'Position',[300 100 440 420], 'NumberTitle', 'off');
+
+    t = uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
+        'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
     
     % plot 5 vector dac trung FFT 
 
-    % fig2 = figure('Name',title,'Position',[400 100 500 450], 'NumberTitle', 'off');
-    % plot(vec_mean_a);
-    % hold on;
-    % plot(vec_mean_e);
-    % hold on;
-    % plot(vec_mean_i);
-    % hold on;
-    % plot(vec_mean_o);
-    % hold on;
-    % plot(vec_mean_u);
-    % hold on;
-    % legend(columnNames);
+    fig2 = figure('Name',title,'Position',[400 100 500 450], 'NumberTitle', 'off');
+    plot(vec_mean_a);
+    hold on;
+    plot(vec_mean_e);
+    hold on;
+    plot(vec_mean_i);
+    hold on;
+    plot(vec_mean_o);
+    hold on;
+    plot(vec_mean_u);
+    hold on;
+    legend(columnNames);
 
     %Tang N_FFT cho den 2048
     N_FFT = N_FFT*2;

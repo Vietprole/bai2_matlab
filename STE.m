@@ -1,5 +1,5 @@
 function ste = STE(frames) 
-    [rows,columns] = size(frames);
+    [rows,~] = size(frames);
     ste = zeros;
     for i = 1:rows
         ste(i)=sum(frames(i,:).^2);      
