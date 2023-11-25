@@ -1,4 +1,4 @@
-function z = FFTnolag(x, fs,numfilter)
+function z = FFTnolag(x, fs, numfilter)
 
     N=numfilter;
     time_duration=0.02; %do dai moi khung 
@@ -13,13 +13,12 @@ function z = FFTnolag(x, fs,numfilter)
         a=(frame_index-1)*(nSampleFrame)+1;
         b=(frame_index)*nSampleFrame+1;
         if b < lenX
-             frame= x(a:b); %xac dinh 1 frame
+             frame = x(a:b); %xac dinh 1 frame
              h=hamming(nSampleFrame+1);
-             frame =h.*frame;
+             frame = h.*frame;
              dfty = abs(fft(frame,N));
              v(frame_index,:) = dfty(1:length(dfty) / 2);
         end
-    %define Speech-Silence 01
     end
     z = mean(v);
     

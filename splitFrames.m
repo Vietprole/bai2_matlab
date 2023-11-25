@@ -4,6 +4,5 @@ function frames = splitFrames(data, Fs, frame_t)
     
     for i = 1:frame_total 
         frames(i,:) = data(frame_sample*(i-1)+1:frame_sample*i);
-    end 
-
+    end
 end 

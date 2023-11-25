@@ -9,7 +9,7 @@ function z = FFT(x, Fs, N_FFT)
     nSampleLag = lag*Fs; %do dai do dich cua frame theo mau
     
     nFrame= int32((lenX-nSampleLag)/(nSampleFrame-nSampleLag))+1;%so frame chia duoc
-    
+    v = [];
     %chia frame
     for frame_index=1:nFrame
         a=(frame_index-1)*(nSampleFrame-nSampleLag)+1;
@@ -19,19 +19,14 @@ function z = FFT(x, Fs, N_FFT)
             b=(frame_index)*nSampleFrame - (frame_index-1)*nSampleLag +1;
         end
         if b < lenX
-            frame= x(a:b); %xac dinh 1 frame
-        %else 
-            %frame= x(a:lenX);
-            %frame(lenX:b)
+             frame= x(a:b); %xac dinh 1 frame
              h=hamming(nSampleFrame+1) ;
              frame =h.*frame;
              dfty = abs(fft(frame,N));
              v(frame_index,:) = dfty(1:length(dfty)/2);
         end
-    %define Speech-Silence 01
     end
     z = mean(v);
-    
 end
       
             
