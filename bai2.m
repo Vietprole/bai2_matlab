@@ -7,18 +7,21 @@ function main()
     N_FFT = 512;
     %frameLength = 0.1; % Number of samples per frame
     frameDuration = 0.02; % Amount of time per frame
-    frameLag = 0.02;
-    steLevel = 0.1;
+    frameShift = 1;
+    steLevel = 0.4;
     numberOfLoop = 3;
+
+    columnNames = ["N_FFT","Frame Duration","Frame Shift","Ste Level","Accuracy"];
+    array = zeros(numberOfLoop, 4);
 
     for N_FFT_loop = 1:numberOfLoop
     
     % Initialize variables to store feature vectors and labels
-    vec_a = zeros(21, N_FFT / 2);
-    vec_e = zeros(21, N_FFT / 2);
-    vec_i = zeros(21, N_FFT / 2);
-    vec_o = zeros(21, N_FFT / 2);
-    vec_u = zeros(21, N_FFT / 2);
+    vec_a = vector_create(N_FFT);
+    vec_e = vector_create(N_FFT);
+    vec_i = vector_create(N_FFT);
+    vec_o = vector_create(N_FFT);
+    vec_u = vector_create(N_FFT);
 
     % Extract feature vectors for vowels from each speaker in the training data
     for speakerIndex = 3:23 % There are 2 empty files inside folder so start with 3
@@ -28,7 +31,7 @@ function main()
                 filePath = strcat(vowelPath, files(fileIndex).name);
                 [data, Fs] = audioread(filePath);
                 vowelIndex = fileIndex - 2;
-                vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameLag, steLevel);
+                vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameShift, steLevel);
                 vecIndex = speakerIndex - 2;
                 if vowelIndex == 1
                     vec_a(vecIndex,:) = vowelFeatureVector;
@@ -51,12 +54,6 @@ function main()
     vec_mean_i = mean(vec_i);
     vec_mean_o = mean(vec_o);
     vec_mean_u = mean(vec_u);
-
-    % vec_mean_a = vec_a / length(dir_contentHL) / length(files);
-    % vec_mean_e = vec_e / length(dir_contentHL) / length(files);
-    % vec_mean_i = vec_i / length(dir_contentHL) / length(files);
-    % vec_mean_o = vec_o / length(dir_contentHL) / length(files);
-    % vec_mean_u = vec_u / length(dir_contentHL) / length(files);
     
     % Combine mean feature vectors into an array
     arrayvec_mean = [vec_mean_a; vec_mean_e; vec_mean_i; vec_mean_o; vec_mean_u];
@@ -79,7 +76,7 @@ function main()
             filePath = strcat(speakerPath, files(fileIndex).name);
             [data, Fs] = audioread(filePath);
             
-            vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameLag, steLevel);
+            vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameShift, steLevel);
             predictedVowelIndex = checkVowel(vowelFeatureVector, arrayvec_mean);
             trueVowelIndex = fileIndex - 2;
             
@@ -94,24 +91,18 @@ function main()
     
     % Calculate accuracy
     accuracy = (105 - wrongVowelPredicted) / 105 * 100;
-    
-    % Generate confusion matrix and classification table
-    % confusionMatrixTable = array2table(result);
-    % classificationTable = array2table(char(predictedPerTest));
-    
-    % Plot average feature vectors for each vowel
-    % plotAverageFeatureVectors
 
+    if N_FFT == 512
     % Generate confusion matrix
     columnNames1 = ["a","e","i","o","u"];
     rowNames1 =  ["a","e","i","o","u"];
-    title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Accuracy: " + num2str(accuracy);
-    fig1 = figure('Name',title,'Position',[200 200 450 200], 'NumberTitle', 'off');
+    title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
+    fig1 = figure('Name',title,'Position',[200 200 620 200], 'NumberTitle', 'off');
     Temp1 = array2table(result);
 
     uitable('Parent',fig1,'Data',table2cell(Temp1),'ColumnName',columnNames1,...
 'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
-
+    end
     % Generate predicted vowel per case table
     columnNames = ["a","e","i","o","u"];
     foldername = {dir_contentTest.name};
@@ -122,15 +113,15 @@ function main()
     celltable = table2cell(Temp);
 
 
-    title = "Predicted Vowel: " + "N_FFT = " + num2str(N_FFT) + " accuracy: " + num2str(accuracy);
-    fig = figure('Name',title,'Position',[300 100 440 420], 'NumberTitle', 'off');
+    title = "Predicted Vowel: " + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
+    fig = figure('Name',title,'Position',[300 100 620 420], 'NumberTitle', 'off');
 
     uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
         'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
-    
-    % Plot 5 features vector of each vowel 
 
-    figure('Name', title, 'Position', [400 100 500 450], 'NumberTitle', 'off');
+    % Plot 5 features vector of each vowel 
+    title = "Features vector: " + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
+    figure('Name', title, 'Position', [400 100 620 450], 'NumberTitle', 'off');
     plot(vec_mean_a);
     hold on;
     plot(vec_mean_e);
@@ -142,8 +133,22 @@ function main()
     plot(vec_mean_u);
     hold on;
     legend(columnNames);
+
+    array(N_FFT_loop,1) = N_FFT;
+    array(N_FFT_loop,2) = frameDuration;
+    array(N_FFT_loop,3) = frameShift;
+    array(N_FFT_loop,4) = steLevel;
+    array(N_FFT_loop,5) = accuracy;
+
     N_FFT = N_FFT * 2;
     end
+    table = array2table(array, 'VariableNames', columnNames);
+    disp(table);
+    % xlswrite('ouput.xlsx', array);
+end
+
+function vec = vector_create (N_FFT)
+    vec = zeros(1, N_FFT/2 );
 end
 
 function labelIndex = checkVowel(vec, array)
@@ -157,11 +162,10 @@ function labelIndex = checkVowel(vec, array)
     labelIndex = index;
 end
 
-function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
+function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameShift)
     % Calculate frame length and lag in samples
     frameSample = round(frameDuration * Fs);
-    lagSample = round(frameLag * Fs);%frame shift
-
+    %lagSample = round(frameLag * Fs);%frame shift
     % Determine the number of frames
     nFrame = floor(length(signal) / frameSample);
     
@@ -170,14 +174,14 @@ function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
 
     % Extract frames and apply Hamming window
     for frameIndex = 1:nFrame
-        startSample = (frameIndex - 1) * (frameSample - lagSample) + 1;
+        startSample = (frameIndex - 1) * (frameSample - frameShift) + 1;
         if(frameIndex == 1)
              endSample = (frameIndex) * frameSample + 1;
         else
-            endSample = (frameIndex) * frameSample - (frameIndex - 1) * lagSample + 1;
+            endSample = (frameIndex) * frameSample - (frameIndex - 1) * frameShift + 1;
         end
         % endSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + nSampleFrame;
-        if endSample < length(signal)
+        if endSample <= length(signal)
         frame = signal(startSample:endSample);
         window = hamming(length(frame));
         windowedFrame = frame .* window;
@@ -191,54 +195,42 @@ function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
     fftFeatures = mean(fftFeatures, 1);
 end
 
-function frames = splitFrames(signal, Fs, frameDuration)
-    % Samples per frame
+function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameShift, steLevel)
+    % Define frame parameters
     frameSample = frameDuration * Fs;
-
     % Determine the number of frames
-    numFrames = floor(length(signal) / frameSample);
-
+    numFrame = floor(length(signal)/frameSample);
+    
+    % Extract frames 
     % Initialize an empty array to store frames
-    frames = zeros(numFrames, frameSample);
+    frames = zeros(numFrame, frameSample);
 
     % Extract frames from the signal
-    for frameIndex = 1:numFrames
+    for frameIndex = 1:numFrame
         startSample = (frameIndex - 1) * frameSample + 1;
         endSample = startSample + frameSample - 1;
 
         frames(frameIndex, :) = signal(startSample:endSample);
     end
-end
-
-function shortTermEnergy = STE(frames)
+    %Calculate short-term energy (STE)  
     % Calculate the sum-of-squares for each frame
     frameEnergy = sum(frames.^2, 2);
 
     % Normalize the frame energy values
     shortTermEnergy = frameEnergy ./ max(frameEnergy);
-end
-
-function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameLag, steLevel)
-    % Define frame parameters
-    frameSample = frameDuration * Fs;
-    frame_total = floor(length(signal)/frameSample);
-
-    % Extract frames and calculate short-term energy (STE)
-    frames = splitFrames(signal, Fs, frameDuration);
-    shortTermEnergy = STE(frames);
-
+    
     % Normalize the signal and determine voiced/unvoiced frames
-    normalizedSignal = signal./max(abs(signal));
-    voicedOrUnvoiced = zeros(1, frame_total);
-    for i = 1:frame_total 
+    signal = signal./max(abs(signal));
+    voicedOrUnvoiced = zeros(1, numFrame);
+    for i = 1:numFrame 
         if (shortTermEnergy(i) > steLevel) 
             voicedOrUnvoiced(i) = 1;
         end
     end
-    % voicedOrUnvoiced = detectVoicedUnvoiced(normalizedSignal, shortTermEnergy);
+    
     voiced_area = zeros(1,2);
     count = 1;
-    for i = 2:frame_total-1
+    for i = 2:numFrame-1
         if (voicedOrUnvoiced(i) ~= voicedOrUnvoiced(i-1) && voicedOrUnvoiced(i) == voicedOrUnvoiced(i+1)) 
             voiced_area(count) = i*frameDuration;
             count = count + 1;
@@ -252,7 +244,7 @@ function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameLag, 
     % Identify voiced segments and select the middle part of the first voiced segment
     % voicedSegments = identifyVoicedSegments(voicedOrUnvoiced);
     if ~isempty(voicedSegments)
-        vowelFeatures = FFT(voicedSegments, Fs, N_FFT, frameDuration, frameLag);
+        vowelFeatures = FFT(voicedSegments, Fs, N_FFT, frameDuration, frameShift);
     else
         vowelFeatures = zeros(1, N_FFT / 2); % Return empty feature vector if no voiced segment is found
     end
