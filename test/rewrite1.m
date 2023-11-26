@@ -4,12 +4,15 @@ function main()
     dir_contentTrain = dir("./NguyenAmHuanLuyen-16k/");
     dataPathTest = 'NguyenAmKiemThu-16k/';
     dir_contentTest = dir("./NguyenAmKiemThu-16k/");
-    N_FFT = 32;
+    N_FFT = 512;
     %frameLength = 0.1; % Number of samples per frame
-    frameDuration = 0.01; % Amount of time per frame
-    frameShift = 0;
-    steLevel = 0.15;
-    numberOfLoop = 20;
+    frameDuration = 0.02; % Amount of time per frame
+    frameShift = 1;
+    steLevel = 0.4;
+    numberOfLoop = 3;
+
+    columnNames = ["N_FFT","Frame Duration","Frame Shift","Ste Level","Accuracy"];
+    array = zeros(numberOfLoop, 4);
 
     for N_FFT_loop = 1:numberOfLoop
     
@@ -51,12 +54,6 @@ function main()
     vec_mean_i = mean(vec_i);
     vec_mean_o = mean(vec_o);
     vec_mean_u = mean(vec_u);
-
-    % vec_mean_a = vec_a / length(dir_contentHL) / length(files);
-    % vec_mean_e = vec_e / length(dir_contentHL) / length(files);
-    % vec_mean_i = vec_i / length(dir_contentHL) / length(files);
-    % vec_mean_o = vec_o / length(dir_contentHL) / length(files);
-    % vec_mean_u = vec_u / length(dir_contentHL) / length(files);
     
     % Combine mean feature vectors into an array
     arrayvec_mean = [vec_mean_a; vec_mean_e; vec_mean_i; vec_mean_o; vec_mean_u];
@@ -94,13 +91,6 @@ function main()
     
     % Calculate accuracy
     accuracy = (105 - wrongVowelPredicted) / 105 * 100;
-    
-    % Generate confusion matrix and classification table
-    % confusionMatrixTable = array2table(result);
-    % classificationTable = array2table(char(predictedPerTest));
-    
-    % Plot average feature vectors for each vowel
-    % plotAverageFeatureVectors
 
     % Generate confusion matrix
     columnNames1 = ["a","e","i","o","u"];
@@ -127,7 +117,7 @@ function main()
 
     uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
         'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
-    
+
     % Plot 5 features vector of each vowel 
     title = "Features vector: " + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
     figure('Name', title, 'Position', [400 100 500 450], 'NumberTitle', 'off');
@@ -142,8 +132,18 @@ function main()
     plot(vec_mean_u);
     hold on;
     legend(columnNames);
-    N_FFT = N_FFT + 32;
+
+    array(N_FFT_loop,1) = N_FFT;
+    array(N_FFT_loop,2) = frameDuration;
+    array(N_FFT_loop,3) = frameShift;
+    array(N_FFT_loop,4) = steLevel;
+    array(N_FFT_loop,5) = accuracy;
+
+    N_FFT = N_FFT * 2;
     end
+    table = array2table(array, 'VariableNames', columnNames);
+    disp(table);
+    % xlswrite('ouput.xlsx', array);
 end
 
 function labelIndex = checkVowel(vec, array)
