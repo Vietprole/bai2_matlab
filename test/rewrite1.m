@@ -4,36 +4,35 @@ function main()
     dir_contentTrain = dir("./NguyenAmHuanLuyen-16k/");
     dataPathTest = 'NguyenAmKiemThu-16k/';
     dir_contentTest = dir("./NguyenAmKiemThu-16k/");
-    N_FFT = 512;
+    N_FFT = 1024;
     
     % Initialize variables to store feature vectors and labels
-    vec_a = zeros(1, N_FFT / 2);
-    vec_e = zeros(1, N_FFT / 2);
-    vec_i = zeros(1, N_FFT / 2);
-    vec_o = zeros(1, N_FFT / 2);
-    vec_u = zeros(1, N_FFT / 2);
+    vec_a = zeros(21, N_FFT / 2);
+    vec_e = zeros(21, N_FFT / 2);
+    vec_i = zeros(21, N_FFT / 2);
+    vec_o = zeros(21, N_FFT / 2);
+    vec_u = zeros(21, N_FFT / 2);
     
     % Extract feature vectors for vowels from each speaker in the training data
     for speakerIndex = 3:23 % There are 2 empty files inside folder so start with 3
-        vowelLabels = ['a', 'e', 'i', 'o', 'u'];
-        vowelPath = append(dataPathTrain, dir_contentTrain(speakerIndex).name, "/");;
+        vowelPath = append(dataPathTrain, dir_contentTrain(speakerIndex).name, "/");
         files = dir(vowelPath);
             for fileIndex = 3:length(files) % There are 2 empty files inside folder so start with 3
                 filePath = strcat(vowelPath, files(fileIndex).name);
                 [data, Fs] = audioread(filePath);
                 vowelIndex = fileIndex - 2;
                 vowelFeatureVector = dactrung(data, Fs, N_FFT);
-                
+                vecIndex = speakerIndex - 2;
                 if vowelIndex == 1
-                    vec_a = vec_a + vowelFeatureVector;
+                    vec_a(vecIndex,:) = vowelFeatureVector;
                 elseif vowelIndex == 2
-                    vec_e = vec_e + vowelFeatureVector;
+                    vec_e(vecIndex,:) = vowelFeatureVector;
                 elseif vowelIndex == 3
-                    vec_i = vec_i + vowelFeatureVector;
+                    vec_i(vecIndex,:) = vowelFeatureVector;
                 elseif vowelIndex == 4
-                    vec_o = vec_o + vowelFeatureVector;
+                    vec_o(vecIndex,:) = vowelFeatureVector;
                 else
-                    vec_u = vec_u + vowelFeatureVector;
+                    vec_u(vecIndex,:) = vowelFeatureVector;
                 end
             end
         
@@ -57,39 +56,87 @@ function main()
     
     % Initialize variables to store classification results
     result = zeros(5, 5);
-    nguyenAmSai = 0;
+    wrongVowelPredicted = 0;
+
+    % Initialize array for table of vowel predicted per test case
+    vowelLabel = ['a', 'e' , 'i', 'o', 'u' ];
+    predictedPerTest = [5 21];
     
     % Evaluate vowel identification performance on the test data
     for speakerIndex = 3:23
         speakerName = dir_contentTest(speakerIndex).name;
-        speakerPath = strcat(dataPathTest, speakerName);
+        speakerPath = append(dataPathTest, speakerName, "/");
         files = dir(speakerPath);
         
         for fileIndex = 3:length(files)
-            filePath = strcat(speakerPath, '/', files(fileIndex).name);
+            filePath = strcat(speakerPath, files(fileIndex).name);
             [data, Fs] = audioread(filePath);
             
             vowelFeatureVector = dactrung(data, Fs, N_FFT);
             predictedVowelIndex = checkNguyenAm(vowelFeatureVector, arrayvec_mean);
             trueVowelIndex = fileIndex - 2;
             
-            result(trueVowelIndex, predictedVowelIndex) = result(trueVowelIndex, predictedVowelIndex) + 1;
+            result(predictedVowelIndex, trueVowelIndex) = result(predictedVowelIndex, trueVowelIndex) + 1;
             
             if predictedVowelIndex ~= trueVowelIndex
-                nguyenAmSai = nguyenAmSai + 1;
+                wrongVowelPredicted = wrongVowelPredicted + 1;
             end
+            predictedPerTest(speakerIndex - 2, fileIndex - 2) = vowelLabel(predictedVowelIndex);
         end
     end
     
     % Calculate accuracy
-    accuracy = (105 - nguyenAmSai) / 105 * 100;
+    accuracy = (105 - wrongVowelPredicted) / 105 * 100;
     
     % Generate confusion matrix and classification table
-    confusionMatrixTable = array2table(result);
-    classificationTable = array2table(char(arraytable));
+    % confusionMatrixTable = array2table(result);
+    % classificationTable = array2table(char(predictedPerTest));
     
     % Plot average feature vectors for each vowel
-    plotAverageFeatureVectors
+    % plotAverageFeatureVectors
+
+    % Generate confusion matrix
+    columnNames1 = ["a","e","i","o","u"];
+    rowNames1 =  ["a","e","i","o","u"];
+    title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Accuracy: " + num2str(accuracy);
+    fig1 = figure('Name',title,'Position',[200 200 450 200], 'NumberTitle', 'off');
+    header = ["a","e","i","o","u"];
+    T1 = array2table(result);
+
+    t1 = uitable('Parent',fig1,'Data',table2cell(T1),'ColumnName',columnNames1,...
+        'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
+
+
+    % dua ra table
+    columnNames = ["a","e","i","o","u"];
+    foldername = {dir_contentTest.name};
+    rowNames = foldername(3:length(foldername));
+    arraytable2 = char(predictedPerTest);
+
+    T = array2table(arraytable2);
+    celltable = table2cell(T);
+
+
+    title = "N_FFT = " + num2str(N_FFT) + " Do chinh xac: " + num2str(accuracy);
+    fig = figure('Name',title,'Position',[300 100 440 420], 'NumberTitle', 'off');
+
+    t = uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
+        'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
+    
+    % plot 5 vector dac trung FFT 
+
+    figure('Name',title,'Position',[400 100 500 450], 'NumberTitle', 'off');
+    plot(vec_mean_a);
+    hold on;
+    plot(vec_mean_e);
+    hold on;
+    plot(vec_mean_i);
+    hold on;
+    plot(vec_mean_o);
+    hold on;
+    plot(vec_mean_u);
+    hold on;
+    legend(columnNames);
 end
 
 function labelIndex = checkNguyenAm(vec1, array)
@@ -138,7 +185,7 @@ function fftFeatures = FFT(signal, Fs, N_FFT)
     end
 
     % Calculate mean FFT features across frames
-    meanFFTFeatures = mean(fftFeatures, 1);
+    fftFeatures = mean(fftFeatures, 1);
 end
 
 function frames = splitFrames(signal, Fs, frameDuration)

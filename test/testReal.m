@@ -1,4 +1,3 @@
-%% 
 
 pathHL = "./NguyenAmHuanLuyen-16k/";
 dir_contentHL = dir("./NguyenAmHuanLuyen-16k/");
@@ -22,35 +21,42 @@ N_FFT = 512;
             features = dactrung(data,Fs,N_FFT);
             end
     end
-function fftFeatures = FFT(signal, Fs, N_FFT)
+    function fftFeatures = FFT(signal, Fs, N_FFT)
     % Define frame parameters
-
     timeDuration = 0.03; % Frame duration in seconds
     lag = 0.02; % Frame lag in seconds
 
-    % Calculate frame length in samples
+    % Calculate frame length and lag in samples
     nSampleFrame = round(timeDuration * Fs);
+    nSampleLag = round(lag * Fs);
 
     % Determine the number of frames
-    numFrames = floor(length(signal) / nSampleFrame);
+    nFrame = floor((length(signal) - nSampleLag) / (nSampleFrame - nSampleLag)) + 1;
 
-    % Initialize an empty array to store frames
-    frames = zeros(numFrames, nSampleFrame); 
+    % Initialize an empty array to store FFT features
+    fftFeatures = zeros(nFrame, N_FFT / 2);
 
-    % Extract frames from the signal
-    for frameIndex = 1:numFrames
-        startSample = (frameIndex - 1) * nSampleFrame + 1;
-        endSample = startSample + nSampleFrame - 1;
-
-        frames(frameIndex, :) = signal(startSample:endSample);
+    % Extract frames and apply Hamming window
+    for frameIndex = 1:nFrame
+        startSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + 1;
+        if(frameIndex == 1)
+             endSample = (frameIndex) * nSampleFrame + 1;
+        else
+            endSample = (frameIndex) * nSampleFrame - (frameIndex - 1) * nSampleLag + 1;
+        end
+        % endSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + nSampleFrame;
+        if endSample < length(signal)
+        frame = signal(startSample:endSample);
+        window = hamming(length(frame));
+        windowedFrame = frame .* window;
+        end
+        % Compute FFT and keep half of the coefficients
+        dftMagnitude = abs(fft(windowedFrame, N_FFT));
+        fftFeatures(frameIndex, :) = dftMagnitude(1:N_FFT / 2);
     end
 
-    % Calculate FFT for each frame
-    fftFeatures = zeros(numFrames, N_FFT / 2);
-    for frameIndex = 1:numFrames
-        frameFFT = abs(fft(frames(frameIndex, :), N_FFT));
-        fftFeatures(frameIndex, :) = frameFFT(1:N_FFT / 2);
-    end
+    % Calculate mean FFT features across frames
+    fftFeatures = mean(fftFeatures, 1);
 end
 function vowelFeatures = dactrung(signal, Fs, N_FFT)
     % Define frame parameters
