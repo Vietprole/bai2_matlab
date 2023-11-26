@@ -7,7 +7,7 @@ function main()
     N_FFT = 512;
     %frameLength = 0.1; % Number of samples per frame
     frameDuration = 0.02; % Amount of time per frame
-    frameLag = 0.02;
+    frameShift = 0.02;
     steLevel = 0.15;
     numberOfLoop = 3;
 
@@ -28,7 +28,7 @@ function main()
                 filePath = strcat(vowelPath, files(fileIndex).name);
                 [data, Fs] = audioread(filePath);
                 vowelIndex = fileIndex - 2;
-                vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameLag, steLevel);
+                vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameShift, steLevel);
                 vecIndex = speakerIndex - 2;
                 if vowelIndex == 1
                     vec_a(vecIndex,:) = vowelFeatureVector;
@@ -79,7 +79,7 @@ function main()
             filePath = strcat(speakerPath, files(fileIndex).name);
             [data, Fs] = audioread(filePath);
             
-            vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameLag, steLevel);
+            vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameShift, steLevel);
             predictedVowelIndex = checkVowel(vowelFeatureVector, arrayvec_mean);
             trueVowelIndex = fileIndex - 2;
             
@@ -157,11 +157,10 @@ function labelIndex = checkVowel(vec, array)
     labelIndex = index;
 end
 
-function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
+function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameShift)
     % Calculate frame length and lag in samples
     frameSample = round(frameDuration * Fs);
-    lagSample = round(frameLag * Fs);%frame shift
-
+    %lagSample = round(frameLag * Fs);%frame shift
     % Determine the number of frames
     nFrame = floor(length(signal) / frameSample);
     
@@ -170,11 +169,11 @@ function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
 
     % Extract frames and apply Hamming window
     for frameIndex = 1:nFrame
-        startSample = (frameIndex - 1) * (frameSample - lagSample) + 1;
+        startSample = (frameIndex - 1) * (frameSample - frameShift) + 1;
         if(frameIndex == 1)
              endSample = (frameIndex) * frameSample + 1;
         else
-            endSample = (frameIndex) * frameSample - (frameIndex - 1) * lagSample + 1;
+            endSample = (frameIndex) * frameSample - (frameIndex - 1) * frameShift + 1;
         end
         % endSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + nSampleFrame;
         if endSample < length(signal)
@@ -191,7 +190,7 @@ function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
     fftFeatures = mean(fftFeatures, 1);
 end
 
-function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameLag, steLevel)
+function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameShift, steLevel)
     % Define frame parameters
     frameSample = frameDuration * Fs;
     % Determine the number of frames
@@ -240,7 +239,7 @@ function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameLag, 
     % Identify voiced segments and select the middle part of the first voiced segment
     % voicedSegments = identifyVoicedSegments(voicedOrUnvoiced);
     if ~isempty(voicedSegments)
-        vowelFeatures = FFT(voicedSegments, Fs, N_FFT, frameDuration, frameLag);
+        vowelFeatures = FFT(voicedSegments, Fs, N_FFT, frameDuration, frameShift);
     else
         vowelFeatures = zeros(1, N_FFT / 2); % Return empty feature vector if no voiced segment is found
     end
