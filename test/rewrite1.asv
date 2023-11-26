@@ -107,12 +107,10 @@ function main()
     rowNames1 =  ["a","e","i","o","u"];
     title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Accuracy: " + num2str(accuracy);
     fig1 = figure('Name',title,'Position',[200 200 450 200], 'NumberTitle', 'off');
-    header = ["a","e","i","o","u"];
-    T1 = array2table(result);
+    Temp1 = array2table(result);
 
-    t1 = uitable('Parent',fig1,'Data',table2cell(T1),'ColumnName',columnNames1,...
-        'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
-
+    uitable('Parent',fig1,'Data',table2cell(Temp1),'ColumnName',columnNames1,...
+'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
 
     % dua ra table
     columnNames = ["a","e","i","o","u"];
@@ -165,8 +163,7 @@ function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
     lagSample = round(frameLag * Fs);%frame shift
 
     % Determine the number of frames
-    nFrame = floor((length(signal) - lagSample) / (frameSample - lagSample)) + 1;
-    nFrames = floor(length(signal) / nSampleFrame);
+    nFrame = floor(length(signal) / frameSample);
     
     % Initialize an empty array to store FFT features
     fftFeatures = zeros(nFrame, N_FFT / 2);

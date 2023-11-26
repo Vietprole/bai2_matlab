@@ -5,7 +5,7 @@ function main()
     dataPathTest = 'NguyenAmKiemThu-16k/';
     dir_contentTest = dir("./NguyenAmKiemThu-16k/");
     N_FFT = 512;
-    frameLength = 0.1; % Number of samples per frame
+    %frameLength = 0.1; % Number of samples per frame
     frameDuration = 0.02; % Amount of time per frame
     frameLag = 0.02;
     steLevel = 0.1;
@@ -80,7 +80,7 @@ function main()
             [data, Fs] = audioread(filePath);
             
             vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameLag, steLevel);
-            predictedVowelIndex = checkNguyenAm(vowelFeatureVector, arrayvec_mean);
+            predictedVowelIndex = checkVowel(vowelFeatureVector, arrayvec_mean);
             trueVowelIndex = fileIndex - 2;
             
             result(predictedVowelIndex, trueVowelIndex) = result(predictedVowelIndex, trueVowelIndex) + 1;
@@ -107,32 +107,30 @@ function main()
     rowNames1 =  ["a","e","i","o","u"];
     title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Accuracy: " + num2str(accuracy);
     fig1 = figure('Name',title,'Position',[200 200 450 200], 'NumberTitle', 'off');
-    header = ["a","e","i","o","u"];
-    T1 = array2table(result);
+    Temp1 = array2table(result);
 
-    t1 = uitable('Parent',fig1,'Data',table2cell(T1),'ColumnName',columnNames1,...
-        'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
+    uitable('Parent',fig1,'Data',table2cell(Temp1),'ColumnName',columnNames1,...
+'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
 
-
-    % dua ra table
+    % Generate predicted vowel per case table
     columnNames = ["a","e","i","o","u"];
     foldername = {dir_contentTest.name};
     rowNames = foldername(3:length(foldername));
     arraytable2 = char(predictedPerTest);
 
-    T = array2table(arraytable2);
-    celltable = table2cell(T);
+    Temp = array2table(arraytable2);
+    celltable = table2cell(Temp);
 
 
-    title = "N_FFT = " + num2str(N_FFT) + " Do chinh xac: " + num2str(accuracy);
+    title = "Predicted Vowel: " + "N_FFT = " + num2str(N_FFT) + " accuracy: " + num2str(accuracy);
     fig = figure('Name',title,'Position',[300 100 440 420], 'NumberTitle', 'off');
 
-    t = uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
+    uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
         'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
     
-    % plot 5 vector dac trung FFT 
+    % Plot 5 features vector of each vowel 
 
-    figure('Name',title,'Position',[400 100 500 450], 'NumberTitle', 'off');
+    figure('Name', title, 'Position', [400 100 500 450], 'NumberTitle', 'off');
     plot(vec_mean_a);
     hold on;
     plot(vec_mean_e);
@@ -148,7 +146,7 @@ function main()
     end
 end
 
-function labelIndex = checkNguyenAm(vec, array)
+function labelIndex = checkVowel(vec, array)
     % Calculate the squared Euclidean distances between the input vector and each mean vector
     distances = sqrt(sum((vec - array).^2, 2));
 
