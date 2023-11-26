@@ -17,11 +17,11 @@ function main()
     for N_FFT_loop = 1:numberOfLoop
     
     % Initialize variables to store feature vectors and labels
-    vec_a = zeros(21, N_FFT / 2);
-    vec_e = zeros(21, N_FFT / 2);
-    vec_i = zeros(21, N_FFT / 2);
-    vec_o = zeros(21, N_FFT / 2);
-    vec_u = zeros(21, N_FFT / 2);
+    vec_a = vector_create(N_FFT);
+    vec_e = vector_create(N_FFT);
+    vec_i = vector_create(N_FFT);
+    vec_o = vector_create(N_FFT);
+    vec_u = vector_create(N_FFT);
 
     % Extract feature vectors for vowels from each speaker in the training data
     for speakerIndex = 3:23 % There are 2 empty files inside folder so start with 3
@@ -92,16 +92,17 @@ function main()
     % Calculate accuracy
     accuracy = (105 - wrongVowelPredicted) / 105 * 100;
 
+    if N_FFT == 512
     % Generate confusion matrix
     columnNames1 = ["a","e","i","o","u"];
     rowNames1 =  ["a","e","i","o","u"];
     title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
-    fig1 = figure('Name',title,'Position',[200 200 450 200], 'NumberTitle', 'off');
+    fig1 = figure('Name',title,'Position',[200 200 620 200], 'NumberTitle', 'off');
     Temp1 = array2table(result);
 
     uitable('Parent',fig1,'Data',table2cell(Temp1),'ColumnName',columnNames1,...
 'RowName',rowNames1,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
-
+    end
     % Generate predicted vowel per case table
     columnNames = ["a","e","i","o","u"];
     foldername = {dir_contentTest.name};
@@ -113,14 +114,14 @@ function main()
 
 
     title = "Predicted Vowel: " + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
-    fig = figure('Name',title,'Position',[300 100 440 420], 'NumberTitle', 'off');
+    fig = figure('Name',title,'Position',[300 100 620 420], 'NumberTitle', 'off');
 
     uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
         'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
 
     % Plot 5 features vector of each vowel 
     title = "Features vector: " + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
-    figure('Name', title, 'Position', [400 100 500 450], 'NumberTitle', 'off');
+    figure('Name', title, 'Position', [400 100 620 450], 'NumberTitle', 'off');
     plot(vec_mean_a);
     hold on;
     plot(vec_mean_e);
@@ -144,6 +145,10 @@ function main()
     table = array2table(array, 'VariableNames', columnNames);
     disp(table);
     % xlswrite('ouput.xlsx', array);
+end
+
+function vec = vector_create (N_FFT)
+    vec = zeros(1, N_FFT/2 );
 end
 
 function labelIndex = checkVowel(vec, array)
