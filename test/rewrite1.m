@@ -4,8 +4,8 @@ function main()
     dir_contentTrain = dir("./NguyenAmHuanLuyen-16k/");
     dataPathTest = 'NguyenAmKiemThu-16k/';
     dir_contentTest = dir("./NguyenAmKiemThu-16k/");
-    N_FFT = 1024;
-    
+    N_FFT = 512;
+for loop = 1:3    
     % Initialize variables to store feature vectors and labels
     vec_a = zeros(21, N_FFT / 2);
     vec_e = zeros(21, N_FFT / 2);
@@ -137,6 +137,8 @@ function main()
     plot(vec_mean_u);
     hold on;
     legend(columnNames);
+     N_FFT = N_FFT * 2;
+end
 end
 
 function labelIndex = checkNguyenAm(vec1, array)

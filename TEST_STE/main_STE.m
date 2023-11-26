@@ -1,5 +1,5 @@
 
-audioName = 'a.wav';
+audioName = 'e.wav';
 [data, Fs] = audioread(audioName);
 
 frame_t = 0.02; % do dai khung theo thoi gian
