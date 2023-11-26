@@ -4,7 +4,14 @@ function main()
     dir_contentTrain = dir("./NguyenAmHuanLuyen-16k/");
     dataPathTest = 'NguyenAmKiemThu-16k/';
     dir_contentTest = dir("./NguyenAmKiemThu-16k/");
-    N_FFT = 1024;
+    N_FFT = 512;
+    frameLength = 0.1; % Number of samples per frame
+    frameDuration = 0.02; % Amount of time per frame
+    frameLag = 0.02;
+    steLevel = 0.1;
+    numberOfLoop = 3;
+
+    for N_FFT_loop = 1:numberOfLoop
     
     % Initialize variables to store feature vectors and labels
     vec_a = zeros(21, N_FFT / 2);
@@ -12,7 +19,7 @@ function main()
     vec_i = zeros(21, N_FFT / 2);
     vec_o = zeros(21, N_FFT / 2);
     vec_u = zeros(21, N_FFT / 2);
-    
+
     % Extract feature vectors for vowels from each speaker in the training data
     for speakerIndex = 3:23 % There are 2 empty files inside folder so start with 3
         vowelPath = append(dataPathTrain, dir_contentTrain(speakerIndex).name, "/");
@@ -21,7 +28,7 @@ function main()
                 filePath = strcat(vowelPath, files(fileIndex).name);
                 [data, Fs] = audioread(filePath);
                 vowelIndex = fileIndex - 2;
-                vowelFeatureVector = dactrung(data, Fs, N_FFT);
+                vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameLag, steLevel);
                 vecIndex = speakerIndex - 2;
                 if vowelIndex == 1
                     vec_a(vecIndex,:) = vowelFeatureVector;
@@ -72,7 +79,7 @@ function main()
             filePath = strcat(speakerPath, files(fileIndex).name);
             [data, Fs] = audioread(filePath);
             
-            vowelFeatureVector = dactrung(data, Fs, N_FFT);
+            vowelFeatureVector = getFeature(data, Fs, N_FFT, frameDuration, frameLag, steLevel);
             predictedVowelIndex = checkNguyenAm(vowelFeatureVector, arrayvec_mean);
             trueVowelIndex = fileIndex - 2;
             
@@ -137,11 +144,13 @@ function main()
     plot(vec_mean_u);
     hold on;
     legend(columnNames);
+    N_FFT = N_FFT * 2;
+    end
 end
 
-function labelIndex = checkNguyenAm(vec1, array)
+function labelIndex = checkNguyenAm(vec, array)
     % Calculate the squared Euclidean distances between the input vector and each mean vector
-    distances = sqrt(sum((vec1 - array).^2, 2));
+    distances = sqrt(sum((vec - array).^2, 2));
 
     % Find the index of the minimum distance
     [~, index] = min(distances);
@@ -150,28 +159,24 @@ function labelIndex = checkNguyenAm(vec1, array)
     labelIndex = index;
 end
 
-function fftFeatures = FFT(signal, Fs, N_FFT)
-    % Define frame parameters
-    timeDuration = 0.03; % Frame duration in seconds
-    lag = 0.02; % Frame lag in seconds
-
+function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
     % Calculate frame length and lag in samples
-    nSampleFrame = round(timeDuration * Fs);
-    nSampleLag = round(lag * Fs);
+    frameSample = round(frameDuration * Fs);
+    lagSample = round(frameLag * Fs);%frame shift
 
     % Determine the number of frames
-    nFrame = floor((length(signal) - nSampleLag) / (nSampleFrame - nSampleLag)) + 1;
-
+    nFrame = floor(length(signal) / frameSample);
+    
     % Initialize an empty array to store FFT features
     fftFeatures = zeros(nFrame, N_FFT / 2);
 
     % Extract frames and apply Hamming window
     for frameIndex = 1:nFrame
-        startSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + 1;
+        startSample = (frameIndex - 1) * (frameSample - lagSample) + 1;
         if(frameIndex == 1)
-             endSample = (frameIndex) * nSampleFrame + 1;
+             endSample = (frameIndex) * frameSample + 1;
         else
-            endSample = (frameIndex) * nSampleFrame - (frameIndex - 1) * nSampleLag + 1;
+            endSample = (frameIndex) * frameSample - (frameIndex - 1) * lagSample + 1;
         end
         % endSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + nSampleFrame;
         if endSample < length(signal)
@@ -189,19 +194,19 @@ function fftFeatures = FFT(signal, Fs, N_FFT)
 end
 
 function frames = splitFrames(signal, Fs, frameDuration)
-    % Calculate frame length in samples
-    frameLength = round(frameDuration * Fs);
+    % Samples per frame
+    frameSample = frameDuration * Fs;
 
     % Determine the number of frames
-    numFrames = floor(length(signal) / frameLength);
+    numFrames = floor(length(signal) / frameSample);
 
     % Initialize an empty array to store frames
-    frames = zeros(numFrames, frameLength);
+    frames = zeros(numFrames, frameSample);
 
     % Extract frames from the signal
     for frameIndex = 1:numFrames
-        startSample = (frameIndex - 1) * frameLength + 1;
-        endSample = startSample + frameLength - 1;
+        startSample = (frameIndex - 1) * frameSample + 1;
+        endSample = startSample + frameSample - 1;
 
         frames(frameIndex, :) = signal(startSample:endSample);
     end
@@ -215,22 +220,20 @@ function shortTermEnergy = STE(frames)
     shortTermEnergy = frameEnergy ./ max(frameEnergy);
 end
 
-function vowelFeatures = dactrung(signal, Fs, N_FFT)
+function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameLag, steLevel)
     % Define frame parameters
-    frameDuration = 0.02; % Frame duration in seconds
-    frame_sample = frameDuration * Fs;
-    frame_total = floor(length(signal)/frame_sample);
+    frameSample = frameDuration * Fs;
+    frame_total = floor(length(signal)/frameSample);
 
     % Extract frames and calculate short-term energy (STE)
     frames = splitFrames(signal, Fs, frameDuration);
     shortTermEnergy = STE(frames);
-    nguong_ste = 0.1;
 
     % Normalize the signal and determine voiced/unvoiced frames
     normalizedSignal = signal./max(abs(signal));
     voicedOrUnvoiced = zeros(1, frame_total);
     for i = 1:frame_total 
-        if (shortTermEnergy(i) > nguong_ste) 
+        if (shortTermEnergy(i) > steLevel) 
             voicedOrUnvoiced(i) = 1;
         end
     end
@@ -246,12 +249,12 @@ function vowelFeatures = dactrung(signal, Fs, N_FFT)
 
     a = voiced_area(1) * Fs;
     b = voiced_area(2) * Fs;
-    khoang = floor((b-a)/3);
-    voicedSegments = signal(floor(a+khoang:b-khoang));
+    interval = floor((b-a)/3);
+    voicedSegments = signal(floor(a+interval:b-interval));
     % Identify voiced segments and select the middle part of the first voiced segment
     % voicedSegments = identifyVoicedSegments(voicedOrUnvoiced);
     if ~isempty(voicedSegments)
-        vowelFeatures = FFT(voicedSegments, Fs, N_FFT);
+        vowelFeatures = FFT(voicedSegments, Fs, N_FFT, frameDuration, frameLag);
     else
         vowelFeatures = zeros(1, N_FFT / 2); % Return empty feature vector if no voiced segment is found
     end
