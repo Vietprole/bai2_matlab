@@ -1,3 +1,5 @@
+% global N_FFT;
+% N_FFT = 512;
 function main()
 pathHL = "./NguyenAmHuanLuyen-16k/";
 dir_contentHL = dir("./NguyenAmHuanLuyen-16k/");
@@ -121,35 +123,66 @@ function labelIndex = checkNguyenAm(vec1, array)
     labelIndex = index;
 end
      
-function z = FFT(x, Fs, N_FFT)
+% function z = FFT(x, Fs, N_FFT)
+% 
+%     N=N_FFT;
+%     time_duration=0.03; %do dai moi khung 
+%     lag = 0.02; %do tre moi khung
+% 
+%     lenX = length(x); %do dai tin hieu vao theo mau
+%     nSampleFrame = time_duration*Fs;%do dai 1 frame tinh theo mau
+%     nSampleLag = lag*Fs; %do dai do dich cua frame theo mau
+% 
+%     nFrame= int32((lenX-nSampleLag)/(nSampleFrame-nSampleLag))+1;%so frame chia duoc
+%     v = [];
+%     %chia frame
+%     for frame_index=1:nFrame
+%         a=(frame_index-1)*(nSampleFrame-nSampleLag)+1;
+%         if(frame_index ==1)
+%              b=(frame_index)*nSampleFrame+1;
+%         else
+%             b=(frame_index)*nSampleFrame - (frame_index-1)*nSampleLag +1;
+%         end
+%         if b < lenX
+%              frame= x(a:b); %xac dinh 1 frame
+%              h=hamming(nSampleFrame+1) ;
+%              frame =h.*frame;
+%              dfty = abs(fft(frame,N));
+%              v(frame_index,:) = dfty(1:length(dfty)/2);
+%         end
+%     end
+%     z = mean(v);
+% end
 
-    N=N_FFT;
-    time_duration=0.03; %do dai moi khung 
-    lag = 0.02; %do tre moi khung
+function fftFeatures = FFT(signal, Fs, N_FFT)
+    % Define frame parameters
+    timeDuration = 0.03; % Frame duration in seconds
+    lag = 0.02; % Frame lag in seconds
 
-    lenX = length(x); %do dai tin hieu vao theo mau
-    nSampleFrame = time_duration*Fs;%do dai 1 frame tinh theo mau
-    nSampleLag = lag*Fs; %do dai do dich cua frame theo mau
-    
-    nFrame= int32((lenX-nSampleLag)/(nSampleFrame-nSampleLag))+1;%so frame chia duoc
-    v = [];
-    %chia frame
-    for frame_index=1:nFrame
-        a=(frame_index-1)*(nSampleFrame-nSampleLag)+1;
-        if(frame_index ==1)
-             b=(frame_index)*nSampleFrame+1;
-        else
-            b=(frame_index)*nSampleFrame - (frame_index-1)*nSampleLag +1;
-        end
-        if b < lenX
-             frame= x(a:b); %xac dinh 1 frame
-             h=hamming(nSampleFrame+1) ;
-             frame =h.*frame;
-             dfty = abs(fft(frame,N));
-             v(frame_index,:) = dfty(1:length(dfty)/2);
-        end
+    % Calculate frame length in samples
+    nSampleFrame = round(timeDuration * Fs);
+
+    % Determine the number of frames
+    numFrames = floor(length(signal) / nSampleFrame);
+
+    % Initialize an empty array to store frames
+    frames = zeros(numFrames, nSampleFrame);
+
+    % Extract frames from the signal
+    for frameIndex = 1:numFrames
+        startSample = (frameIndex - 1) * nSampleFrame + 1;
+        endSample = startSample + nSampleFrame - 1;
+
+        frames(frameIndex, :) = signal(startSample:endSample);
     end
-    z = mean(v);
+
+    % Calculate FFT for each frame
+    fftFeatures = zeros(numFrames, N_FFT / 2);
+    for frameIndex = 1:numFrames
+        frameFFT = abs(fft(frames(frameIndex, :), N_FFT));
+        fftFeatures(frameIndex, :) = frameFFT(1:N_FFT / 2);
+    end
+    fftFeatures = mean(fftFeatures);
 end
 
 function frames = splitFrames(data, Fs, frame_t)  
@@ -211,5 +244,3 @@ function vector = dactrung(data, Fs, N_FFT)
     %vector = FFTnolag(data2,Fs,N_FFT);
 
 end 
-
-
