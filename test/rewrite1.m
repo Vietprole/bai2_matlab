@@ -4,12 +4,12 @@ function main()
     dir_contentTrain = dir("./NguyenAmHuanLuyen-16k/");
     dataPathTest = 'NguyenAmKiemThu-16k/';
     dir_contentTest = dir("./NguyenAmKiemThu-16k/");
-    N_FFT = 512;
+    N_FFT = 32;
     %frameLength = 0.1; % Number of samples per frame
-    frameDuration = 0.02; % Amount of time per frame
-    frameShift = 0.02;
+    frameDuration = 0.01; % Amount of time per frame
+    frameShift = 0;
     steLevel = 0.15;
-    numberOfLoop = 3;
+    numberOfLoop = 20;
 
     for N_FFT_loop = 1:numberOfLoop
     
@@ -105,7 +105,7 @@ function main()
     % Generate confusion matrix
     columnNames1 = ["a","e","i","o","u"];
     rowNames1 =  ["a","e","i","o","u"];
-    title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Accuracy: " + num2str(accuracy);
+    title = "Confusion matrix" + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
     fig1 = figure('Name',title,'Position',[200 200 450 200], 'NumberTitle', 'off');
     Temp1 = array2table(result);
 
@@ -122,14 +122,14 @@ function main()
     celltable = table2cell(Temp);
 
 
-    title = "Predicted Vowel: " + "N_FFT = " + num2str(N_FFT) + " accuracy: " + num2str(accuracy);
+    title = "Predicted Vowel: " + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
     fig = figure('Name',title,'Position',[300 100 440 420], 'NumberTitle', 'off');
 
     uitable('Parent',fig,'Data',celltable,'ColumnName',columnNames,...
         'RowName',rowNames,'Units', 'Normalized', 'Position',[0, 0, 1, 1]);
     
     % Plot 5 features vector of each vowel 
-
+    title = "Features vector: " + ", N_FFT = " + num2str(N_FFT) + ", Frame duration: " + num2str(frameDuration) + ", Ste level: " + num2str(steLevel) + ", Accuracy: " + num2str(accuracy);
     figure('Name', title, 'Position', [400 100 500 450], 'NumberTitle', 'off');
     plot(vec_mean_a);
     hold on;
@@ -142,7 +142,7 @@ function main()
     plot(vec_mean_u);
     hold on;
     legend(columnNames);
-    N_FFT = N_FFT * 2;
+    N_FFT = N_FFT + 32;
     end
 end
 
@@ -176,7 +176,7 @@ function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameShift)
             endSample = (frameIndex) * frameSample - (frameIndex - 1) * frameShift + 1;
         end
         % endSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + nSampleFrame;
-        if endSample < length(signal)
+        if endSample <= length(signal)
         frame = signal(startSample:endSample);
         window = hamming(length(frame));
         windowedFrame = frame .* window;
