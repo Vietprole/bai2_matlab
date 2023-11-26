@@ -8,7 +8,7 @@ function main()
     %frameLength = 0.1; % Number of samples per frame
     frameDuration = 0.02; % Amount of time per frame
     frameLag = 0.02;
-    steLevel = 0.1;
+    steLevel = 0.15;
     numberOfLoop = 3;
 
     for N_FFT_loop = 1:numberOfLoop
@@ -191,54 +191,42 @@ function fftFeatures = FFT(signal, Fs, N_FFT, frameDuration, frameLag)
     fftFeatures = mean(fftFeatures, 1);
 end
 
-function frames = splitFrames(signal, Fs, frameDuration)
-    % Samples per frame
+function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameLag, steLevel)
+    % Define frame parameters
     frameSample = frameDuration * Fs;
-
     % Determine the number of frames
-    numFrames = floor(length(signal) / frameSample);
-
+    numFrame = floor(length(signal)/frameSample);
+    
+    % Extract frames 
     % Initialize an empty array to store frames
-    frames = zeros(numFrames, frameSample);
+    frames = zeros(numFrame, frameSample);
 
     % Extract frames from the signal
-    for frameIndex = 1:numFrames
+    for frameIndex = 1:numFrame
         startSample = (frameIndex - 1) * frameSample + 1;
         endSample = startSample + frameSample - 1;
 
         frames(frameIndex, :) = signal(startSample:endSample);
     end
-end
-
-function shortTermEnergy = STE(frames)
+    %Calculate short-term energy (STE)  
     % Calculate the sum-of-squares for each frame
     frameEnergy = sum(frames.^2, 2);
 
     % Normalize the frame energy values
     shortTermEnergy = frameEnergy ./ max(frameEnergy);
-end
-
-function vowelFeatures = getFeature(signal, Fs, N_FFT, frameDuration, frameLag, steLevel)
-    % Define frame parameters
-    frameSample = frameDuration * Fs;
-    frame_total = floor(length(signal)/frameSample);
-
-    % Extract frames and calculate short-term energy (STE)
-    frames = splitFrames(signal, Fs, frameDuration);
-    shortTermEnergy = STE(frames);
-
+    
     % Normalize the signal and determine voiced/unvoiced frames
-    normalizedSignal = signal./max(abs(signal));
-    voicedOrUnvoiced = zeros(1, frame_total);
-    for i = 1:frame_total 
+    signal = signal./max(abs(signal));
+    voicedOrUnvoiced = zeros(1, numFrame);
+    for i = 1:numFrame 
         if (shortTermEnergy(i) > steLevel) 
             voicedOrUnvoiced(i) = 1;
         end
     end
-    % voicedOrUnvoiced = detectVoicedUnvoiced(normalizedSignal, shortTermEnergy);
+    
     voiced_area = zeros(1,2);
     count = 1;
-    for i = 2:frame_total-1
+    for i = 2:numFrame-1
         if (voicedOrUnvoiced(i) ~= voicedOrUnvoiced(i-1) && voicedOrUnvoiced(i) == voicedOrUnvoiced(i+1)) 
             voiced_area(count) = i*frameDuration;
             count = count + 1;
