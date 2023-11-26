@@ -127,11 +127,11 @@ function fftFeatures = FFT(signal, Fs, N_FFT)
             endSample = (frameIndex) * nSampleFrame - (frameIndex - 1) * nSampleLag + 1;
         end
         % endSample = (frameIndex - 1) * (nSampleFrame - nSampleLag) + nSampleFrame;
-        if endSample < length(signal)
+        if endSample < lie
         frame = signal(startSample:endSample);
         window = hamming(length(frame));
         windowedFrame = frame .* window;
-        end
+
         % Compute FFT and keep half of the coefficients
         dftMagnitude = abs(fft(windowedFrame, N_FFT));
         fftFeatures(frameIndex, :) = dftMagnitude(1:N_FFT / 2);

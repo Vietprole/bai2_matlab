@@ -19,7 +19,7 @@ N_FFT = 512;
             path2 = strcat(temp,files(j).name);
             [data,Fs] = audioread(path2);
             fft = FFT(data, Fs, N_FFT);
-            features = dactrung(data,Fs,N_FFT);
+            plot(fft);
             end
     end
 function fftFeatures = FFT(signal, Fs, N_FFT)
